@@ -31,17 +31,11 @@ df.columns = ['B3_difference_extra','E4_having_child','E21_sex','E22_Age','E22_A
 # we use a normal distribution for the parameters
 
 # #  cross validation from sklearn
-# from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split
 X = df[['E22_Age','E22_Age_Squared']]
 y = df['B3_difference_extra']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-
-
-
-#  split the dataset into 80% training and 20% testing
-#  we use the training dataset to train the model
-#  we use the testing dataset to test the model
 
 # create model
 with pm.Model() as model:
