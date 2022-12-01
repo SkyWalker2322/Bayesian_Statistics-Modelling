@@ -1,59 +1,61 @@
+# implementing bayesian statistics on dataset phd-delays.csv
 
-
-import pymc3 as pm
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
-import theano.tensor as tt
-import theano
-import scipy.stats as stats
-import scipy.optimize as opt
+import pymc3 as pm
 import arviz as az
+import scipy.stats as stats
 import warnings
 warnings.filterwarnings('ignore')
 
+# reading the dataset
+df = pd.read_csv('phd-delays.csv', delimiter=';')
+# the dataset contains the following columns
+# B3_difference_extra 
+# E4_having_child
+# E21_sex
+# E22_Age
+# E22_Age_Squared
+# E4_having_child is a categorical variable
 
-# data = pd.read_csv('data.csv')
-# data.head()
+# reading the dataset
+# df = pd.read_csv('phd-delays.csv', delimiter=';')
+df.columns = ['B3_difference_extra','E4_having_child','E21_sex','E22_Age','E22_Age_Squared']
 
-df=pd.read_csv('phd-delays.csv')
-data=df.to_numpy()
-X=[]
-Y=[]
+# create a model on age as a parameter as y = beta0 + beta1 * age + beta2 * age^2 + e
+# where e is the error term
 
-for i in range(len(data)):
-    arr=data[i][0]
-    nums=arr.split(';')
-    X.append(int(nums[3]))
-    Y.append(int(nums[0]))
-
-X=np.array(X)
-Y=np.array(Y)
+# first we create a prior distribution for the parameters
+# we use a normal distribution for the parameters
 
 
-from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import train_test_split
 
-X_train, X_test, y_train, y_test = train_test_split(X, Y, random_state=0)
-
+# create model
 with pm.Model() as model:
-    alpha = pm.Normal('alpha', mu=0, sd=10)
-    beta = pm.Normal('beta', mu=0, sd=10)
-    sigma = pm.HalfNormal('sigma', sd=1)
+    # define priors for the parameters beta0, beta1, beta2
+    beta0 = pm.Normal('beta0', mu=0, sigma=10)
+    beta1 = pm.Normal('beta1', mu=0, sigma=10)
+    beta2 = pm.Normal('beta2', mu=0, sigma=10)
+    sigma = pm.HalfNormal('sigma', sigma=1)
+    
     # define likelihood
-    mu = alpha + beta * data['x']
-    likelihood = pm.Normal('y', mu=mu, sd=sigma, observed=data['y'])
+    likelihood = pm.Normal('y', mu=beta0 + beta1*df['E22_Age'] + beta2*df['E22_Age_Squared'], sigma=sigma, observed=df['B3_difference_extra'])
+    
     # inference
-    trace = pm.sample(1000, tune=1000, cores=1)
+    trace = pm.sample(1000, tune=1000, cores=3)
+    # trace = pm.sample(1000, tune=1000, cores=2, chains=2)
 
-pm.traceplot(trace)
-plt.show()
+# plot the trace
+# pm.traceplot(trace)
+# plt.show()
+
+# plot the posterior distribution
 pm.plot_posterior(trace)
+plt.plot(beta0, beta1, beta2)
 plt.show()
-pm.plot_posterior_predictive_glm(trace, samples=100, label='posterior predictive regression lines')
-plt.scatter(data['x'], data['y'], label='observed data', color='C0')
-plt.xlabel('x')
-plt.ylabel('y')
-plt.legend()
+
+# scatter plot of beta1
+plt.scatter(beta2,beta1)
 plt.show()
