@@ -37,3 +37,4 @@ az.plot_density(trace)
 plt.show()
 
 # perform accuracy test on this test dataset
+az.summary(trace) #summarise our trace run with MCMC
