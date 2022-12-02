@@ -3,56 +3,39 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pymc3 as pm
 import arviz as az
-import scipy.stats as stats
+import sklearn as sk
 import warnings
 warnings.filterwarnings('ignore')
 
 # reading the dataset
 df = pd.read_csv('phd-delays.csv', delimiter=';')
-# the dataset contains the following columns
-# B3_difference_extra 
-# E4_having_child
-# E21_sex
-# E22_Age
-# E22_Age_Squared
-# E4_having_child is a categorical variable
-
-# reading the dataset
-# df = pd.read_csv('phd-delays.csv', delimiter=';')
 df.columns = ['B3_difference_extra','E4_having_child','E21_sex','E22_Age','E22_Age_Squared']
 
-# create a model on age as a parameter as y = beta0 + beta1 * age + beta2 * age^2 + e
-# where e is the error term
-
-# first we create a prior distribution for the parameters
-# we use a normal distribution for the parameters
-
-# #  cross validation from sklearn
-from sklearn.model_selection import train_test_split
+#split the dataset
 X = df[['E22_Age','E22_Age_Squared']]
 y = df['B3_difference_extra']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = sk.train_test_split(X, y, test_size=0.2, random_state=42)
 
-
-# create model
+# creating a model for y = b_intercept + b_0*age + b_1*age^2 + e
 with pm.Model() as model:
-    # define priors for the parameters beta0, beta1, beta2
-    beta0 = pm.Normal('beta0', mu=0, sigma=0.75)
-    beta1 = pm.Normal('beta1', mu=0, sigma=0.5)
-    beta2 = pm.Normal('beta2', mu=0, sigma=0.25)
-    sigma = pm.HalfNormal('sigma', sigma=2.25)
-    
-    # define likelihood
-    likelihood = pm.Normal('y', mu=beta0 + beta1*df['E22_Age'] + beta2*df['E22_Age_Squared'], sigma=1, observed=df['B3_difference_extra'])
-    
-    # inference
-    trace = pm.sample(init='adapt_diag',tune=2500)
-    # trace = pm.sample(1000, tune=1000, cores=2, chains=2)
 
-# find predictions of posterior distribution
-with model:
-    ppc = pm.sample_posterior_predictive(trace, samples=1000)
-    print(ppc)
+    b_intercept = pm.Normal('b_intercept',mu = 0, sigma=1)
+    b_0 = pm.Normal('b_0' , mu = 2.5 , sigma=1)
+    b_1 = pm.Normal('b_1' , mu = 0, sigma = 1)
+
+    likelihood = pm.Normal('y', mu=b_intercept + b_0*X_train['E22_Age'] + b_1*X_train['E22_Age_Squared'], sigma=1, observed=y_train['B3_difference_extra'])
+
+    # perform inference
+    trace = pm.sample(init='adapt_diag')
+
+az.plot_trace(trace)
+plt.show()
+az.plot_posterior(trace)
+plt.show()
+az.plot_density(trace)
+plt.show()
+
+# perform accuracy test on this test dataset
+az.summary(trace) #summarise our trace run with MCMC
