@@ -20,6 +20,7 @@ X_train, X_test, y_train, y_test = sk.train_test_split(X, y, test_size=0.2, rand
 
 # creating a model for y = b_intercept + b_0*age + b_1*age^2 + e
 with pm.Model() as model:
+
     b_intercept = pm.Normal('b_intercept',mu = 0, sigma=1)
     b_0 = pm.Normal('b_0' , mu = 2.5 , sigma=1)
     b_1 = pm.Normal('b_1' , mu = 0, sigma = 1)
