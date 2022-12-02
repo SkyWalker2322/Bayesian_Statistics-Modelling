@@ -46,22 +46,13 @@ with pm.Model() as model:
     sigma = pm.HalfNormal('sigma', sigma=2.25)
     
     # define likelihood
-    likelihood = pm.Normal('y', mu=beta0 + beta1*df['E22_Age'] + beta2*df['E22_Age_Squared'], sigma=sigma, observed=df['B3_difference_extra'])
+    likelihood = pm.Normal('y', mu=beta0 + beta1*df['E22_Age'] + beta2*df['E22_Age_Squared'], sigma=1, observed=df['B3_difference_extra'])
     
     # inference
-    trace = pm.sample(1000, tune=1000, cores=3)
+    trace = pm.sample(init='adapt_diag',tune=2500)
     # trace = pm.sample(1000, tune=1000, cores=2, chains=2)
 
-# plot the trace
-# pm.traceplot(trace)
-# plt.show()
-
-# plot the posterior distribution
-pm.plot_posterior(trace)
-plt.plot(beta0, beta1, beta2)
-plt.show()
-
-# scatter plot of beta1
-plt.scatter(beta2,beta1)
-plt.show()
-
+# find predictions of posterior distribution
+with model:
+    ppc = pm.sample_posterior_predictive(trace, samples=1000)
+    print(ppc)
